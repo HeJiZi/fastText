@@ -406,7 +406,7 @@ real CustomSoftmaxLoss::forward(
           index++;
       }
       // real label = (i == target) ? 1.0 : 0.0;
-      real alpha =  lr * (label - state.output[i]);
+      real alpha =  lr *(label - state.output[i]);
       state.grad.addRow(*wo_, i, alpha);
       wo_->addVectorToRow(state.hidden, i, alpha);
     }
@@ -414,7 +414,7 @@ real CustomSoftmaxLoss::forward(
 
   real loss =0.0;
   for(int8_t i=0; i<targets.size();i++){
-    loss += - (1.0/3.0) * log(state.output[targets[i]]);
+    loss += - log(state.output[targets[i]]*3.0);
   }
   return loss;        
 };
