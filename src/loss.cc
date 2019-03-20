@@ -390,22 +390,22 @@ real CustomSoftmaxLoss::forward(
     real lr,
     bool backprop){
   computeOutput(state);
-  assert(targetIndex >= 0);
-  assert(targetIndex < targets.size());
-  int32_t target = targets[targetIndex];
-  // int8_t index = 0;
+  // assert(targetIndex >= 0);
+  // assert(targetIndex < targets.size());
+  // int32_t target = targets[targetIndex];
+  int8_t index = 0;
 
   if (backprop) {
     int32_t osz = wo_->size(0);
     
     for (int32_t i = 0; i < osz; i++) {
-      // real label = 0.0;
-      // if( i == targets[index]){
-      //   real label = 1.0;
-      //   if(index+1<targets.size())
-      //     index++;
-      // }
-      real label = (i == target) ? 1.0 : 0.0;
+      real label = 0.0;
+      if( i == targets[index]){
+        real label = 1.0/3.0;
+        if(index+1<targets.size())
+          index++;
+      }
+      // real label = (i == target) ? 1.0 : 0.0;
       real alpha =  lr * (label - state.output[i]);
       state.grad.addRow(*wo_, i, alpha);
       wo_->addVectorToRow(state.hidden, i, alpha);
@@ -414,7 +414,7 @@ real CustomSoftmaxLoss::forward(
 
   real loss =0.0;
   for(int8_t i=0; i<targets.size();i++){
-    loss += -  log(state.output[targets[i]]);
+    loss += - (1.0/3.0) * log(state.output[targets[i]]);
   }
   return loss;        
 };
