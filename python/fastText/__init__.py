@@ -16,4 +16,6 @@ from .FastText import tokenize
 from .FastText import EOS
 from .FastText import BOW
 from .FastText import EOW
+
 from .FastText import fit
+from .FastText import create_root_node

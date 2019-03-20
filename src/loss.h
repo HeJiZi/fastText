@@ -17,6 +17,7 @@
 #include "real.h"
 #include "utils.h"
 #include "vector.h"
+#include "dictionary.h"
 
 namespace fasttext {
 
@@ -158,6 +159,26 @@ class SoftmaxLoss : public Loss {
       real lr,
       bool backprop) override;
   void computeOutput(Model::State& state) const override;
+};
+
+class CustomSoftmaxLoss : public Loss {
+ public:
+  explicit CustomSoftmaxLoss(std::shared_ptr<Matrix>& wo,Tree* tree);
+  ~CustomSoftmaxLoss() noexcept override = default;
+  real forward(
+      const std::vector<int32_t>& targets,
+      int32_t targetIndex,
+      Model::State& state,
+      real lr,
+      bool backprop) override;
+  void computeOutput(Model::State& state) const override;
+  void predict(
+      int32_t k,
+      real threshold,
+      Predictions& heap,
+      Model::State& state) const override;
+ protected:
+ Tree* tree_;
 };
 
 } // namespace fasttext

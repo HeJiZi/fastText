@@ -23,12 +23,26 @@ namespace fasttext {
 
 typedef int32_t id_type;
 enum class entry_type : int8_t { word = 0, label = 1 };
+enum class label_type : int8_t { first = 0, second = 1 ,third = 2};
 
 struct entry {
   std::string word;
   int64_t count;
   entry_type type;
+  label_type lType;
   std::vector<int32_t> subwords;
+};
+
+
+class Tree{
+  private:
+    std::shared_ptr<TreeNode> root_;
+  public:
+    Tree();
+    ~Tree();
+    const std::shared_ptr<TreeNode> root();
+    int8_t height;
+    std::vector<std::vector<std::shared_ptr<TreeNode>>> levelNodes;
 };
 
 class Dictionary {
@@ -51,7 +65,9 @@ class Dictionary {
   //新增成员
   std::vector<entry> labels_;
   std::vector<int32_t> label2int_;
+  std::vector<int32_t> bottomlabel2int_;
   int32_t labelSize_;
+  
   //  
 
   std::vector<real> pdiscard_;
@@ -75,6 +91,7 @@ class Dictionary {
 
   explicit Dictionary(std::shared_ptr<Args>);
   explicit Dictionary(std::shared_ptr<Args>, std::istream&);
+  explicit Dictionary(std::shared_ptr<Args>,Tree* tree);
   int32_t nwords() const;
   int32_t nlabels() const;
   int64_t ntokens() const;
@@ -121,6 +138,7 @@ class Dictionary {
   int32_t getFitLine(std::vector<std::string> x,std::string y,std::vector<int32_t>& words,std::vector<int32_t>& labels);
   std::vector<std::string> getLabels();
   int32_t findL(const std::string& w, uint32_t h);
+  Tree* tree_;
   //
 };
 

@@ -29,19 +29,7 @@
 #include "vector.h"
 
 namespace fasttext {
-class TreeNode{
- private:
-  std::string name_;
-  TreeNode* parent_;
-  std::vector<std::shared_ptr<TreeNode>> children_;
 
- public:
-  std::shared_ptr<TreeNode> getChild(const std::string name);
-  std::shared_ptr<TreeNode> addChild(const std::string name);
-  TreeNode* parent();
-  std::string name();
-  TreeNode(const std::string name);
-};
 class FastText {
  protected:
   std::shared_ptr<Args> args_;
@@ -160,10 +148,10 @@ class FastText {
   void train(const Args& args);
 
 //新增函数  
-  void fit(const std::vector<std::vector<std::string>> features,const std::vector<std::string> labels,const Args& args);
+  void fit(const std::vector<std::vector<std::string>> features,const std::vector<std::string> labels,TreeNode& root,const Args& args);
   void startFitThreads();
   void trainFitThread(int32_t threadId);
-  void predict(
+  int64_t predict(
     const std::vector<std::vector<std::string>> features,
     const std::vector<std::string> targets, 
     int32_t k, 

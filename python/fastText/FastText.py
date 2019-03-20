@@ -20,6 +20,32 @@ BOW = "<"
 EOW = ">"
 
 
+class _TreeNode:
+
+    def __init__(self, node):
+        self._tn = node
+        self._children = {}
+        self._parent = None
+
+    @property
+    def name(self):
+        return fasttext.TreeNode.name(self._tn)
+
+    @property
+    def parent(self):
+        return self._parent
+
+    def add_chlid(self, node_name):
+        if node_name not in self._children.keys():
+            node = fasttext.TreeNode.add_child(self._tn, node_name)
+            wrapper_node = _TreeNode(node)
+            self._children[node_name] = wrapper_node
+            wrapper_node._parent = self
+
+    def get_child(self, name):
+        return self._children[name]
+
+
 class _FastText():
     """
     This class defines the API to inspect models and should not be used to
@@ -414,6 +440,7 @@ def train_unsupervised(
 def fit(
     x,
     y,
+    rootNode=None,
     lr=0.1,
     dim=100,
     ws=5,
@@ -436,7 +463,7 @@ def fit(
 
     a = _bulid_fit_args(locals())
     ft = _FastText()
-    fasttext.fit(ft.f,x,y,a)
+    fasttext.fit(ft.f,x,y,rootNode._tn,a)
     return ft
 
 
@@ -445,10 +472,14 @@ def _bulid_fit_args(args):
     args["loss"] = _parse_loss_string(args["loss"])
     a = fasttext.args()
     for (k, v) in args.items():
-        if k !='x' and k!='y':
+        if k !='x' and k!='y' and k!='rootNode':
             setattr(a, k, v)
     a.output = ""  # User should use save_model
     a.saveOutput = 0  # Never use this
     if a.wordNgrams <= 1 and a.maxn == 0:
         a.bucket = 0
     return a
+
+
+def create_root_node():
+    return _TreeNode(fasttext.create_root())

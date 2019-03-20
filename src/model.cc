@@ -86,10 +86,12 @@ void Model::update(
   if (normalizeGradient_) {
     grad.mul(1.0 / input.size());
   }
+  // grad.zero();
   for (auto it = input.cbegin(); it != input.cend(); ++it) {
     wi_->addVectorToRow(grad, *it, 1.0);
   }
 }
+
 
 real Model::std_log(real x) const {
   return std::log(x + 1e-5);

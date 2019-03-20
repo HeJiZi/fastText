@@ -45,6 +45,28 @@ Dictionary::Dictionary(std::shared_ptr<Args> args, std::istream& in)
   load(in);
 }
 
+Dictionary::Dictionary(std::shared_ptr<Args> args,Tree* tree)
+    : args_(args),
+      word2int_(MAX_VOCAB_SIZE, -1),
+      label2int_(MAX_LABEL_SIZE, -1),
+      bottomlabel2int_(MAX_LABEL_SIZE, -1),
+      size_(0),
+      labelSize_(0),
+      nwords_(0),
+      nlabels_(0),
+      ntokens_(0),
+      pruneidx_size_(-1),
+      tree_(tree)
+      {
+        std::vector<std::shared_ptr<TreeNode>> nodesAtLevel = tree->levelNodes[tree->height];
+        int size = nodesAtLevel.size();
+        for(int i=0; i<size; i++){
+          std::string name = nodesAtLevel[i]->name();
+          int32_t  h = findL(name,hash(name)); 
+          bottomlabel2int_[h] = i;
+        }
+      }
+
 int32_t Dictionary::find(const std::string& w) const {
   return find(w, hash(w));
 }
@@ -267,18 +289,32 @@ void Dictionary::add(const std::string& w,const entry_type type){
   }
   else
   {
-    int32_t h = findL(w,hash(w));
-    // std::cout<<"labelhash:"<<h<<",word2intSize:"<<word2int_.size()<<std::endl;
-    if (label2int_[h] == -1) {
-      entry e;
-      e.word = w;
-      e.count = 1;
-      e.type = entry_type::label;
-      labels_.push_back(e);
-      label2int_[h] = labelSize_++;
-    } else {
-      labels_[label2int_[h]].count++;
-    } 
+    std::vector<std::string> s;
+    std::shared_ptr<TreeNode> currentNode = tree_->levelNodes[tree_->height][bottomlabel2int_[findL(w,hash(w))]];
+    TreeNode* p = currentNode->parent();
+    s.push_back(currentNode->name());
+    while(p->name()!="root"&&p->parent()!=NULL){
+      s.push_back(p->name());
+      p = p->parent();
+    }
+    for(int8_t i = tree_->height -1 ;i>=0;i--){
+      int32_t h = findL(s[i],hash(s[i]));
+      if(label2int_[h]== -1){
+        entry e;
+        e.word = s[i];
+        e.count = 1;
+        e.lType = label_type(tree_->height -1 - i);
+        labels_.push_back(e);
+        label2int_[h] = labelSize_++;
+      }
+      else
+      {
+        labels_[label2int_[h]].count++;
+      }
+    }
+
+    s.clear();
+    s.shrink_to_fit();
   }
  
 }
@@ -307,6 +343,7 @@ void Dictionary::readFromArray(const std::vector<std::vector<std::string>> featu
     // std::cout<<"label was added:"<<labels[i]<<std::endl;
 
   }
+  std::cout<<"labelSize:"<<labelSize_<<",wordSize"<<std::endl;
   fitThreshold(args_->minCount, args_->minCountLabel);
   initTableDiscard();
   initNgrams();
@@ -326,6 +363,7 @@ void Dictionary::fitThreshold(int64_t t, int64_t tl){
     return e1.count > e2.count;
   });
   sort(labels_.begin(), labels_.end(), [](const entry& e1, const entry& e2) {
+    if(e1.lType!=e2.lType) return e1.lType>e2.lType;
     return e1.count > e2.count;
   });
   labels_.erase(
@@ -359,6 +397,7 @@ void Dictionary::fitThreshold(int64_t t, int64_t tl){
 
   for (auto it = labels_.begin(); it != labels_.end(); ++it) {
     int32_t h = findL(it->word,hash(it->word));
+    // std::cout<<"index:"<<labelSize_<<it->word<<std::endl;
     label2int_[h] = labelSize_++;
   }  
 }
@@ -386,7 +425,13 @@ int32_t Dictionary::getFitLine(
       //   std::cout<<"subword"<<k<<":"<<words[k]<<std::endl;
       // }
   }
+  std::shared_ptr<TreeNode> currentNode = tree_->levelNodes[tree_->height][bottomlabel2int_[findL(y,hash(y))]];
+  TreeNode* p = currentNode->parent();
   labels.push_back(label2int_[findL(y,hash(y))]);
+  while(p->name()!="root"&&p->parent()!=NULL){
+    labels.push_back(label2int_[findL(p->name(),hash(p->name()))]);
+    p = p->parent();
+  }
   addWordNgrams(words, word_hashes, args_->wordNgrams);
   return ntokens;  
 }

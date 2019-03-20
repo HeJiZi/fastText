@@ -70,7 +70,6 @@ void Loss::predict(
   findKBest(k, threshold, heap, state.output);
   std::sort_heap(heap.begin(), heap.end(), comparePairs);
 }
-//新增函数
 
 void Loss::findKBest(
     int32_t k,
@@ -345,4 +344,87 @@ real SoftmaxLoss::forward(
   return -log(state.output[target]);
 };
 
+
+CustomSoftmaxLoss::CustomSoftmaxLoss(std::shared_ptr<Matrix>& wo,Tree* tree)
+  :Loss(wo)
+  ,tree_(tree){};
+
+void CustomSoftmaxLoss::computeOutput(Model::State& state) const {
+  Vector& output = state.output;
+  output.mul(*wo_, state.hidden);//将隐藏层乘上输出矩阵，得到output
+  real max = output[0], z = 0.0;
+  int32_t osz = output.size();
+  for (int32_t i = 0; i < osz; i++) {
+    max = std::max(output[i], max);
+  }
+  for (int32_t i = 0; i < osz; i++) {
+    output[i] = exp(output[i] - max);
+    // output[i] = exp(output[i]);
+    z += output[i];
+  }
+  for (int32_t i = 0; i < osz; i++) {
+    output[i] /= z;
+  }
+  // int16_t start = 0;
+  // for(int8_t i = tree_->height; i>0; i--){
+  //   int16_t size = tree_->levelNodes[i].size();
+  //   real max = output[start], z = 0.0;
+  //   for(int16_t j = start; j<start + size; j++){
+  //     max = std::max(output[j],max);
+  //   }
+  //   for(int16_t j = start; j<start + size; j++){
+  //     output[j] = exp(output[j] - max);
+  //     z += output[j];
+  //   }
+  //   for(int16_t j = start; j<start + size; j++){
+  //     output[j] /=z;
+  //   }
+  //   start += size;           
+  // }
+};
+
+real CustomSoftmaxLoss::forward(
+    const std::vector<int32_t>& targets,
+    int32_t targetIndex,
+    Model::State& state,
+    real lr,
+    bool backprop){
+  computeOutput(state);
+  assert(targetIndex >= 0);
+  assert(targetIndex < targets.size());
+  int32_t target = targets[targetIndex];
+  // int8_t index = 0;
+
+  if (backprop) {
+    int32_t osz = wo_->size(0);
+    
+    for (int32_t i = 0; i < osz; i++) {
+      // real label = 0.0;
+      // if( i == targets[index]){
+      //   real label = 1.0;
+      //   if(index+1<targets.size())
+      //     index++;
+      // }
+      real label = (i == target) ? 1.0 : 0.0;
+      real alpha =  lr * (label - state.output[i]);
+      state.grad.addRow(*wo_, i, alpha);
+      wo_->addVectorToRow(state.hidden, i, alpha);
+    }
+  }
+
+  real loss =0.0;
+  for(int8_t i=0; i<targets.size();i++){
+    loss += -  log(state.output[targets[i]]);
+  }
+  return loss;        
+};
+
+void CustomSoftmaxLoss::predict(
+    int32_t k,
+    real threshold,
+    Predictions& heap,
+    Model::State& state) const {
+  computeOutput(state);
+
+}
 } // namespace fasttext

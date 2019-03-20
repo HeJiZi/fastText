@@ -777,11 +777,11 @@ void FastText::train(const Args& args) {
 }
 
 //新增函数
-void FastText::fit(const std::vector<std::vector<std::string>> features,const std::vector<std::string> labels,const Args& args){
+void FastText::fit(const std::vector<std::vector<std::string>> features,const std::vector<std::string> labels,TreeNode& root,const Args& args){
   features_ = features;
   labels_ = labels;
   args_ = std::make_shared<Args>(args);
-  dict_ = std::make_shared<Dictionary>(args_);
+  dict_ = std::make_shared<Dictionary>(args_,root.tree());
   if (args_->input != "") {
     std::cout<<"warnning:the function won't to read a input file";
   }
@@ -793,7 +793,8 @@ void FastText::fit(const std::vector<std::vector<std::string>> features,const st
     input_ = createRandomMatrix();
   }
   output_ = createTrainOutputMatrix();
-  auto loss = createLoss(output_);
+  // auto loss = createLoss(output_);
+  auto loss = std::make_shared<CustomSoftmaxLoss>(output_,root.tree());
   bool normalizeGradient = (args_->model == model_name::sup);
   model_ = std::make_shared<Model>(input_, output_, loss, normalizeGradient);
 
@@ -871,7 +872,7 @@ void FastText::trainFitThread(int32_t threadId) {
   }
 }
 
-void FastText::predict(
+int64_t FastText::predict(
     const std::vector<std::vector<std::string>> features,
     const std::vector<std::string> targets, 
     int32_t k, 
@@ -880,19 +881,33 @@ void FastText::predict(
   std::vector<int32_t> line;
   std::vector<int32_t> labels;
   Predictions predictions;
-  // std::cout<<"--test--"<<"minn:"<<args_->minn<<"maxn:"<<args_->maxn<<std::endl;
-  int xNumber = features.size();
-  for(int i=0; i<xNumber; i++){
-    // std::cout<<features[i][0]<<std::endl;
+  int64_t xNumber = features.size();
+  int64_t right = 0;
+  for(int64_t i=0; i<xNumber; i++){
     dict_->getFitLine(features[i],targets[i],line,labels);
-    // std::cout<<"lineSize:"<<line.size()<<",labels.size："<<labels.size()<<std::endl;
-    // std::cout<<"label:"<<labels[0]<<std::endl;
+
     if (!labels.empty() && !line.empty()) {
       predictions.clear();
-      predict(k, line, predictions, threshold);
-      meter.log(labels, predictions);
+      Model::State state(args_->dim, dict_->nlabels(), 0);
+      if (args_->model != model_name::sup) {
+        throw std::invalid_argument("Model needs to be supervised for prediction!");
+      }
+      model_->predict(line, 1, threshold, predictions, state);
+      int16_t osz = dict_->tree_->levelNodes[dict_->tree_->height].size();
+      real max = state.output[0];
+      int16_t maxIndex = 0;
+      for(int16_t j=0;j<osz;j++){
+        if(state.output[j]>max){
+          max = state.output[j];
+          maxIndex = j;
+          if(max > 0.5) break;
+        }
+      }
+      if(dict_->getLabels()[maxIndex] == targets[i])
+        right++;
     }
   }
+  return right;
 }
 
 std::vector<std::vector<float>> FastText::predictProb(
@@ -972,24 +987,64 @@ bool comparePairs(
   return l.first > r.first;
 }
 
-TreeNode::TreeNode(std::string name)
+TreeNode::TreeNode(std::string name,Tree* tree)
   :name_(name),
-  parent_(NULL){}
+  parent_(NULL),
+  tree_(tree),
+  depth_(0){}
 
 TreeNode* TreeNode::parent(){ return parent_;}
-  std::string TreeNode::name(){ return name_;}
-  std::shared_ptr<TreeNode> TreeNode::getChild(const std::string name){
-    int size = children_.size();
-    for(int i=0; i<size; i++){
-      if(children_[i]->name() == name)
-        return children_[i];
-    }
-    return NULL;
+std::string TreeNode::name(){ return name_;}
+int TreeNode::depth(){return depth_;}
+
+std::shared_ptr<TreeNode> TreeNode::getChild(const std::string name){
+  int size = children_.size();
+  for(int i=0; i<size; i++){
+    if(children_[i]->name() == name)
+      return children_[i];
   }
+  return NULL;
+}
 std::shared_ptr<TreeNode> TreeNode::addChild(const std::string name){
-    std::shared_ptr<TreeNode> newNode = std::make_shared<TreeNode>(name);
-    children_.push_back(newNode);
-    newNode->parent_ = this;
-    return newNode;
-  }
+  std::shared_ptr<TreeNode> newNode = std::make_shared<TreeNode>(name,tree_);
+  newNode->depth_ = depth_+1;
+  // std::cout<<"depth:"<<depth_<<",size:"<<tree_->levelNodes.size()<<std::endl;
+  if(newNode->depth_>tree_->height)
+    tree_->height = newNode->depth_;
+  // int d = newNode->depth_ - tree_->levelNodes.size() ;
+  // while(d-->0){
+  //   std::cout<<"push_before-size:"<<tree_->levelNodes.size()<<std::endl;
+  //   std::vector<std::shared_ptr<TreeNode>> line;
+  //   line.clear();
+  //   line.shrink_to_fit();
+  //   // std::cout<<"push_before-line -size:"<<line.size()<<std::endl;
+  //   tree_->levelNodes.push_back(line);
+  //   // std::cout<<"push_after-line -size:"<<line.size()<<std::endl;
+  //   std::cout<<"push_after-size:"<<tree_->levelNodes.size()<<std::endl;
+  // }
+  // std::cout<<"push:"<<name<<std::endl;
+  // std::cout<<"push_node_before-size:"<<tree_->levelNodes.size()<<std::endl;
+  tree_->levelNodes[newNode->depth_].push_back(newNode);
+  // std::cout<<"push_node_after-size:"<<tree_->levelNodes.size()<<std::endl;
+
+  children_.push_back(newNode);
+  newNode->parent_ = this;
+  return newNode;
+}
+
+Tree* TreeNode::tree(){
+  return tree_;
+}
+
+Tree::Tree()
+  :height(0),
+  levelNodes(10){
+    root_= std::make_shared<TreeNode>("root",this);
+  };
+Tree::~Tree(){
+  for(auto it= levelNodes.begin();it!=levelNodes.end();it++)
+    it->clear();
+  levelNodes.clear();
+}
+const std::shared_ptr<TreeNode> Tree::root(){ return root_;}
 } // namespace fasttext

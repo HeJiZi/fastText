@@ -56,8 +56,11 @@ std::pair<std::vector<py::str>, std::vector<py::str>> getLineText(
 }
 
 PYBIND11_MODULE(fasttext_pybind, m) {
+  m.def("create_root",[](){
+    fasttext::Tree* t = new fasttext::Tree();
+    return t->root();
+  });
   py::class_<fasttext::TreeNode>(m, "TreeNode")
-    .def(py::init<std::string>())
     .def("name", [](fasttext::TreeNode& m){
       return m.name();
     })
@@ -123,9 +126,12 @@ PYBIND11_MODULE(fasttext_pybind, m) {
   m.def(
       "fit",
       [](fasttext::FastText& ft, 
-        std::vector<std::vector<std::string>> features, 
+        std::vector<std::vector<std::string>> features,
         std::vector<std::string> labels,
-        fasttext::Args& a) { ft.fit(features,labels,a); },
+        fasttext::TreeNode &root,
+        fasttext::Args& a) { 
+          ft.fit(features,labels,root,a); 
+          },
       py::call_guard<py::gil_scoped_release>());
 
   py::class_<fasttext::Vector>(m, "Vector", py::buffer_protocol())
@@ -197,9 +203,8 @@ PYBIND11_MODULE(fasttext_pybind, m) {
              const std::vector<std::vector<std::string>> features,
              const std::vector<std::string> targets) {
             fasttext::Meter meter;
-            m.predict(features, targets, 1, 0.0, meter);
-            return std::tuple<int64_t, double, double>(
-                meter.nexamples(), meter.precision(), meter.recall());
+            int64_t right = m.predict(features, targets, 1, 0.0, meter);
+            return right;
           })
       .def(
           "predict_prob",

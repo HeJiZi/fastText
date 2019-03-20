@@ -12,12 +12,30 @@
 #include <ostream>
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace fasttext {
 
 enum class model_name : int { cbow = 1, sg, sup };
 enum class loss_name : int { hs = 1, ns, softmax, ova };
+class Tree;
+class TreeNode{
+ private:
+  std::string name_;
+  TreeNode* parent_;
+  std::vector<std::shared_ptr<TreeNode>> children_;
+  int depth_;
+  Tree* tree_;
 
+ public:
+  std::shared_ptr<TreeNode> getChild(const std::string name);
+  std::shared_ptr<TreeNode> addChild(const std::string name);
+  TreeNode* parent();
+  std::string name();
+  Tree* tree();
+  int depth();
+  TreeNode(const std::string name,Tree* tree);
+};
 class Args {
  protected:
   std::string lossToString(loss_name) const;
