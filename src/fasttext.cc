@@ -871,7 +871,7 @@ void FastText::trainFitThread(int32_t threadId) {
   }
 }
 
-void FastText::predict(
+int FastText::predict(
     const std::vector<std::vector<std::string>> features,
     const std::vector<std::string> targets, 
     int32_t k, 
@@ -882,6 +882,7 @@ void FastText::predict(
   Predictions predictions;
   // std::cout<<"--test--"<<"minn:"<<args_->minn<<"maxn:"<<args_->maxn<<std::endl;
   int xNumber = features.size();
+  int rightNum = 0;
   for(int i=0; i<xNumber; i++){
     // std::cout<<features[i][0]<<std::endl;
     dict_->getFitLine(features[i],targets[i],line,labels);
@@ -889,19 +890,25 @@ void FastText::predict(
     // std::cout<<"label:"<<labels[0]<<std::endl;
     if (!labels.empty() && !line.empty()) {
       predictions.clear();
-      predict(k, line, predictions, threshold);
-      meter.log(labels, predictions);
+      Model::State state(args_->dim, dict_->nlabels(), 0);
+      if (args_->model != model_name::sup) {
+        throw std::invalid_argument("Model needs to be supervised for prediction!");
+      }
+      model_->predict(line, k, threshold, predictions, state);
+      if(state.output.argmax() == labels[0])
+        rightNum ++;
     }
   }
+  return rightNum;
 }
 
-std::vector<std::vector<float>> FastText::predictProb(
+std::vector<Vector> FastText::predictProb(
     const std::vector<std::vector<std::string>> features,
     real threshold){
   std::vector<int32_t> line;
   std::vector<int32_t> labels;
   Predictions predictions;
-  std::vector<std::vector<float>> res;
+  std::vector<Vector> res;
 
   int xNumber = features.size();
   for(int i=0; i<xNumber; i++){
@@ -914,12 +921,12 @@ std::vector<std::vector<float>> FastText::predictProb(
         throw std::invalid_argument("Model needs to be supervised for prediction!");
       }
       model_->predict(line, 1, threshold, predictions, state);
-      std::vector<float> out;
-      for(int k=0;k<state.output.size();k++){
-        out.push_back(state.output[k]);
-        // std::cout<<(dict_->getLabels())[k]<<":"<<state.output[k]<<std::endl;
-      }
-      res.push_back(out);
+      res.push_back(state.output);
+    }
+    else{
+      Vector* v = new Vector(dict_->nlabels());
+      (*v)[0] = 1.0;
+      res.push_back(*v);
     }
   }
   return res;

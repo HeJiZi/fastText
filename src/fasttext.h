@@ -151,13 +151,13 @@ class FastText {
   void fit(const std::vector<std::vector<std::string>> features,const std::vector<std::string> labels,const Args& args);
   void startFitThreads();
   void trainFitThread(int32_t threadId);
-  void predict(
+  int predict(
     const std::vector<std::vector<std::string>> features,
     const std::vector<std::string> targets, 
     int32_t k, 
     real threshold, 
     Meter& meter);
-  std::vector<std::vector<float>> predictProb(
+  std::vector<Vector> predictProb(
       const std::vector<std::vector<std::string>> features,
       real threshold);
   std::vector<std::string> getLabels();

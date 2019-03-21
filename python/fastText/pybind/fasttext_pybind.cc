@@ -114,6 +114,9 @@ PYBIND11_MODULE(fasttext_pybind, m) {
       py::call_guard<py::gil_scoped_release>());
 
   py::class_<fasttext::Vector>(m, "Vector", py::buffer_protocol())
+      .def("__getitem__",[](fasttext::Vector& m,int64_t index){
+        return m[index];
+      })
       .def(py::init<ssize_t>())
       .def_buffer([](fasttext::Vector& m) -> py::buffer_info {
         return py::buffer_info(
@@ -182,9 +185,7 @@ PYBIND11_MODULE(fasttext_pybind, m) {
              const std::vector<std::vector<std::string>> features,
              const std::vector<std::string> targets) {
             fasttext::Meter meter;
-            m.predict(features, targets, 1, 0.0, meter);
-            return std::tuple<int64_t, double, double>(
-                meter.nexamples(), meter.precision(), meter.recall());
+            return m.predict(features, targets, 1, 0.0, meter);
           })
       .def(
           "predict_prob",
