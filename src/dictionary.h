@@ -115,12 +115,13 @@ class Dictionary {
   void init();
 
   //新增函数
-  void readFromArray(const std::vector<std::vector<std::string>> features,const std::vector<std::string> labels);
+  void readFromArray(const std::vector<std::vector<std::string>> features,const std::vector<std::string> labels,std::vector<std::pair<std::string,float>> sample_weight);
   void add(const std::string& w,const entry_type type);
   void fitThreshold(int64_t t, int64_t tl);
   int32_t getFitLine(std::vector<std::string> x,std::string y,std::vector<int32_t>& words,std::vector<int32_t>& labels);
   std::vector<std::string> getLabels();
   int32_t findL(const std::string& w, uint32_t h);
+  std::vector<float> weightTable;
   //
 };
 

@@ -771,13 +771,14 @@ void FastText::train(const Args& args) {
   }
   output_ = createTrainOutputMatrix();
   auto loss = createLoss(output_);
+
   bool normalizeGradient = (args_->model == model_name::sup);
   model_ = std::make_shared<Model>(input_, output_, loss, normalizeGradient);
   startThreads();
 }
 
 //新增函数
-void FastText::fit(const std::vector<std::vector<std::string>> features,const std::vector<std::string> labels,const Args& args){
+void FastText::fit(const std::vector<std::vector<std::string>> features,const std::vector<std::string> labels,const Args& args,std::vector<std::pair<std::string,float>> sample_weight){
   features_ = features;
   labels_ = labels;
   args_ = std::make_shared<Args>(args);
@@ -785,7 +786,7 @@ void FastText::fit(const std::vector<std::vector<std::string>> features,const st
   if (args_->input != "") {
     std::cout<<"warnning:the function won't to read a input file";
   }
-  dict_->readFromArray(features,labels);
+  dict_->readFromArray(features,labels,sample_weight);
 
   if (!args_->pretrainedVectors.empty()) {
     input_ = getInputMatrixFromFile(args_->pretrainedVectors);
@@ -794,6 +795,7 @@ void FastText::fit(const std::vector<std::vector<std::string>> features,const st
   }
   output_ = createTrainOutputMatrix();
   auto loss = createLoss(output_);
+  loss->setWeightTable(dict_->weightTable);
   bool normalizeGradient = (args_->model == model_name::sup);
   model_ = std::make_shared<Model>(input_, output_, loss, normalizeGradient);
 

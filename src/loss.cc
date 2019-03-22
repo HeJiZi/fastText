@@ -10,6 +10,7 @@
 #include "utils.h"
 
 #include <cmath>
+// #include <iostream>
 
 namespace fasttext {
 
@@ -25,6 +26,9 @@ bool comparePairs(
 
 real std_log(real x) {
   return std::log(x + 1e-5);
+}
+void Loss::setWeightTable(std::vector<float> weightTabel){
+  weightTabel_ = weightTabel;
 }
 
 Loss::Loss(std::shared_ptr<Matrix>& wo) : wo_(wo) {
@@ -336,7 +340,8 @@ real SoftmaxLoss::forward(
     int32_t osz = wo_->size(0);
     for (int32_t i = 0; i < osz; i++) {
       real label = (i == target) ? 1.0 : 0.0;
-      real alpha = lr * (label - state.output[i]);
+      real alpha = lr * (label - state.output[i]) * weightTabel_[target];
+      // std::cout<<weightTabel_[i]<<std::endl;
       state.grad.addRow(*wo_, i, alpha);
       wo_->addVectorToRow(state.hidden, i, alpha);
     }

@@ -148,7 +148,7 @@ class FastText {
   void train(const Args& args);
 
 //新增函数  
-  void fit(const std::vector<std::vector<std::string>> features,const std::vector<std::string> labels,const Args& args);
+  void fit(const std::vector<std::vector<std::string>> features,const std::vector<std::string> labels,const Args& args,std::vector<std::pair<std::string,float>> sample_weight);
   void startFitThreads();
   void trainFitThread(int32_t threadId);
   int predict(

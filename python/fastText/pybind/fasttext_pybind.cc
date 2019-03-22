@@ -110,7 +110,8 @@ PYBIND11_MODULE(fasttext_pybind, m) {
       [](fasttext::FastText& ft, 
         std::vector<std::vector<std::string>> features, 
         std::vector<std::string> labels,
-        fasttext::Args& a) { ft.fit(features,labels,a); },
+        fasttext::Args& a,
+        std::vector<std::pair<std::string,float>> sample_weight) { ft.fit(features,labels,a,sample_weight); },
       py::call_guard<py::gil_scoped_release>());
 
   py::class_<fasttext::Vector>(m, "Vector", py::buffer_protocol())

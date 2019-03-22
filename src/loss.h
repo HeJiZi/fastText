@@ -32,11 +32,13 @@ class Loss {
   std::vector<real> t_sigmoid_;
   std::vector<real> t_log_;
   std::shared_ptr<Matrix>& wo_;
+  std::vector<float> weightTabel_;
 
   real log(real x) const;
   real sigmoid(real x) const;
 
  public:
+  void setWeightTable(std::vector<float> weightTabel);
   explicit Loss(std::shared_ptr<Matrix>& wo);
   virtual ~Loss() = default;
 

@@ -414,6 +414,7 @@ def train_unsupervised(
 def fit(
     x,
     y,
+    sampleWeight={},
     lr=0.1,
     dim=100,
     ws=5,
@@ -436,7 +437,7 @@ def fit(
 
     a = _bulid_fit_args(locals())
     ft = _FastText()
-    fasttext.fit(ft.f,x,y,a)
+    fasttext.fit(ft.f,x,y,a,sampleWeight)
     return ft
 
 
@@ -445,7 +446,7 @@ def _bulid_fit_args(args):
     args["loss"] = _parse_loss_string(args["loss"])
     a = fasttext.args()
     for (k, v) in args.items():
-        if k !='x' and k!='y':
+        if k !='x' and k!='y' and k!= 'sampleWeight':
             setattr(a, k, v)
     a.output = ""  # User should use save_model
     a.saveOutput = 0  # Never use this

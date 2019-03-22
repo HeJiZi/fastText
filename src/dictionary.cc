@@ -282,7 +282,7 @@ void Dictionary::add(const std::string& w,const entry_type type){
   }
  
 }
-void Dictionary::readFromArray(const std::vector<std::vector<std::string>> features,const std::vector<std::string> labels){
+void Dictionary::readFromArray(const std::vector<std::vector<std::string>> features,const std::vector<std::string> labels, std::vector<std::pair<std::string,float>> sample_weight){
   std::string word;
   int64_t minThreshold = 1;
   int x_size = features.size();
@@ -308,6 +308,30 @@ void Dictionary::readFromArray(const std::vector<std::vector<std::string>> featu
 
   }
   fitThreshold(args_->minCount, args_->minCountLabel);
+
+  weightTable.clear();
+  weightTable.shrink_to_fit();
+
+  int index = 0;
+  for (auto it = labels_.begin(); it != labels_.end(); ++it) {
+    int32_t h = findL(it->word,hash(it->word));
+    bool isFind =false;
+    for(auto sit = sample_weight.begin(); sit!=sample_weight.end();sit++){
+      if(sit->first == it->word){
+        weightTable.push_back(sit->second);
+        std::cout<<sit->first<<","<<it->word<<",push"<<sit->second<<std::endl;
+        isFind = true;
+        break;
+      }
+    }
+    if(!isFind){
+      weightTable.push_back(1.0);
+      std::cout<<"push1.0"<<std::endl;
+    }
+    std::cout<<it->word<<":"<<weightTable[index++]<<std::endl;
+  }  
+
+
   initTableDiscard();
   initNgrams();
   if (args_->verbose > 0) {
