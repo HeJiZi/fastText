@@ -904,6 +904,34 @@ int FastText::predict(
   return rightNum;
 }
 
+std::string FastText::predictLabel(
+    const std::vector<std::string> feature,
+    real threshold){
+  std::vector<int32_t> line;
+  std::vector<int32_t> labels;
+  Predictions predictions;
+  std::string res;
+
+  int xNumber = feature.size();
+  dict_->getFitLine(feature,"NONE",line,labels);
+  if (!labels.empty() && !line.empty()) {
+    predictions.clear();
+    // predict(1, line, predictions, threshold);
+    Model::State state(args_->dim, dict_->nlabels(), 0);
+    if (args_->model != model_name::sup) {
+      throw std::invalid_argument("Model needs to be supervised for prediction!");
+    }
+    model_->predict(line, 1, threshold, predictions, state);
+    // std::cout<<"argmax:"<<state.output.argmax()<<",label:"<<(dict_->getLabels())[state.output.argmax()]<<std::endl;
+    res = (dict_->getLabels())[state.output.argmax()];
+  }
+  else{
+    res = dict_->getLabels()[0];
+  }
+  // std::cout<<res<<std::endl;
+  return res;
+}
+
 std::vector<Vector> FastText::predictProb(
     const std::vector<std::vector<std::string>> features,
     real threshold){

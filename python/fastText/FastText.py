@@ -97,6 +97,9 @@ class _FastText():
         self.f.getInputVector(b, ind)
         return np.array(b)
     
+    def predict_label(self,name):
+        return self.f.predict_label(name)
+
     def predict(self, text, k=1, threshold=0.0, on_unicode_error='strict'):
         """
         Given a string, get a list of labels and a list of

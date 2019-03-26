@@ -161,6 +161,9 @@ class FastText {
       const std::vector<std::vector<std::string>> features,
       real threshold);
   std::vector<std::string> getLabels();
+  std::string predictLabel(
+    const std::vector<std::string> feature,
+    real threshold);
 //
 
   int getDimension() const;

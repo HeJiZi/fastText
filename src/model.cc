@@ -61,7 +61,7 @@ void Model::predict(
   } else if (k <= 0) {
     throw std::invalid_argument("k needs to be 1 or higher!");
   }
-  heap.reserve(k + 1);
+  // heap.reserve(k + 1);
   computeHidden(input, state);
 
   loss_->predict(k, threshold, heap, state);

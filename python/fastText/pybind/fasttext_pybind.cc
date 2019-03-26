@@ -195,6 +195,12 @@ PYBIND11_MODULE(fasttext_pybind, m) {
             return m.predictProb(features,0.0);
           })
       .def(
+          "predict_label",
+          [](fasttext::FastText& m, 
+             const std::vector<std::string> features){
+            return m.predictLabel(features,0.0);
+          })      
+      .def(
           "get_labels",
           [](fasttext::FastText& m){
             return m.getLabels();

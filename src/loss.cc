@@ -71,8 +71,8 @@ void Loss::predict(
     Predictions& heap,
     Model::State& state) const {
   computeOutput(state);
-  findKBest(k, threshold, heap, state.output);
-  std::sort_heap(heap.begin(), heap.end(), comparePairs);
+  // findKBest(k, threshold, heap, state.output);
+  // std::sort_heap(heap.begin(), heap.end(), comparePairs);
 }
 //新增函数
 
