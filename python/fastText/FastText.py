@@ -100,6 +100,9 @@ class _FastText():
     def predict_label(self,name):
         return self.f.predict_label(name)
 
+    def predict_labels(self,x):
+        return self.f.predict_labels(x, multiprocessing.cpu_count() - 1)
+
     def predict(self, text, k=1, threshold=0.0, on_unicode_error='strict'):
         """
         Given a string, get a list of labels and a list of

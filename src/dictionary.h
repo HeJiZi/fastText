@@ -52,6 +52,7 @@ class Dictionary {
   std::vector<entry> labels_;
   std::vector<int32_t> label2int_;
   int32_t labelSize_;
+  std::vector<char*> labelName_;
   //  
 
   std::vector<real> pdiscard_;
@@ -119,7 +120,7 @@ class Dictionary {
   void add(const std::string& w,const entry_type type);
   void fitThreshold(int64_t t, int64_t tl);
   int32_t getFitLine(std::vector<std::string> x,std::string y,std::vector<int32_t>& words,std::vector<int32_t>& labels);
-  std::vector<std::string> getLabels();
+  std::vector<char*> getLabels();
   int32_t findL(const std::string& w, uint32_t h);
   std::vector<float> weightTable;
   //

@@ -903,6 +903,72 @@ int FastText::predict(
   }
   return rightNum;
 }
+std::vector<char*> FastText::startPredictThreads(const std::vector<std::vector<std::string>> *features, int32_t threadNum){
+  int64_t predictNumber = features->size();
+  // std::cout<<"predictNumber:"<<predictNumber<<std::endl;
+  std::vector<char*> *targets = new std::vector<char*>(predictNumber);
+  if(predictNumber< 2 * threadNum)
+    threadNum =1;
+  // std::cout<<"new pointer success,targetsize:"<< targets->size() <<std::endl;
+  std::vector<std::thread> threads;
+  predict_count = 0;
+  dict_->getLabels();
+  for (int32_t i = 0; i < threadNum; i++) {
+    threads.push_back(std::thread([=]() { predictThread(features, targets,threadNum,i); }));
+  }
+
+  while (predict_count< predictNumber) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    if (loss_ >= 0 && args_->verbose > 1) {
+      real progress = real(predict_count) / predictNumber;
+      std::cerr << "\r";
+      std::cerr << "已完成:"<<progress;
+    }
+  }
+  std::cerr << "\r";
+
+  for (int32_t i = 0; i < threadNum; i++) {
+    threads[i].join();
+  }
+  return *targets;
+
+}
+void FastText::predictThread(
+    const std::vector<std::vector<std::string>> *features,
+    std::vector<char*> *targets,
+    int32_t threadNum,
+    int32_t threadId){
+  int64_t readIndex = (features->size()/threadNum)*threadId;
+  int64_t nextIndex = threadId<threadNum-1?(features->size()/threadNum)*(threadId+1):features->size();
+  std::vector<int32_t> line;
+  std::vector<int32_t> labels;
+  Predictions predictions;
+  int64_t readCount = 0;
+  if (args_->model != model_name::sup) {
+    throw std::invalid_argument("Model needs to be supervised for prediction!");
+  }
+  while(readIndex < nextIndex){
+    // std::cout<< threadId<<":"<<readIndex<<std::endl;
+    dict_->getFitLine((*features)[readIndex],"NONE",line,labels);
+    if (!labels.empty() && !line.empty()) {
+      Model::State state(args_->dim, dict_->nlabels(), 0);
+      model_->predict(line, 1, 0, predictions, state);
+      // std::cout<< (dict_->getLabels())[state.output.argmax()]<<std::endl;
+      (*targets)[readIndex] = (dict_->getLabels())[state.output.argmax()];
+      // std::cout<< "eq:"<<(*targets)[readIndex]<<std::endl;
+    }
+    else{
+      (*targets)[readIndex] = dict_->getLabels()[0];
+    }
+    readIndex++;
+    readCount++;      
+    if(readCount > 10000){
+      predict_count += readCount;
+      readCount = 0;
+    }
+  }
+  predict_count += readCount;
+}
 
 std::string FastText::predictLabel(
     const std::vector<std::string> feature,
@@ -962,7 +1028,7 @@ std::vector<Vector> FastText::predictProb(
   return res;
 }
 
-std::vector<std::string> FastText::getLabels(){
+std::vector<char*> FastText::getLabels(){
   return dict_->getLabels();
 }
 //

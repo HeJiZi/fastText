@@ -319,16 +319,16 @@ void Dictionary::readFromArray(const std::vector<std::vector<std::string>> featu
     for(auto sit = sample_weight.begin(); sit!=sample_weight.end();sit++){
       if(sit->first == it->word){
         weightTable.push_back(sit->second);
-        std::cout<<sit->first<<","<<it->word<<",push"<<sit->second<<std::endl;
+        // std::cout<<sit->first<<","<<it->word<<",push"<<sit->second<<std::endl;
         isFind = true;
         break;
       }
     }
     if(!isFind){
       weightTable.push_back(1.0);
-      std::cout<<"push1.0"<<std::endl;
+      // std::cout<<"push1.0"<<std::endl;
     }
-    std::cout<<it->word<<":"<<weightTable[index++]<<std::endl;
+    // std::cout<<it->word<<":"<<weightTable[index++]<<std::endl;
   }  
 
 
@@ -415,12 +415,18 @@ int32_t Dictionary::getFitLine(
   return ntokens;  
 }
 
-std::vector<std::string> Dictionary::getLabels(){
-  std::vector<std::string> labels;
-  for (auto it = labels_.begin(); it != labels_.end(); ++it) {
-    labels.push_back(it->word);
+std::vector<char*> Dictionary::getLabels(){
+  if(labelName_.size()< 1){
+    for (auto it = labels_.begin(); it != labels_.end(); ++it) {
+      int32_t len = it->word.length();
+      char* p = new char[len+1];
+      for(int32_t i=0;i<len;i++)
+        p[i]=it->word[i];
+      p[len] = '\0';
+      labelName_.push_back(p);
+    }
   }
-  return labels;  
+  return labelName_;  
 }
 //
 

@@ -199,7 +199,13 @@ PYBIND11_MODULE(fasttext_pybind, m) {
           [](fasttext::FastText& m, 
              const std::vector<std::string> features){
             return m.predictLabel(features,0.0);
-          })      
+          }) 
+      .def("predict_labels",
+          [](fasttext::FastText& m, 
+             const std::vector<std::vector<std::string>> features,
+             int32_t threadNum){
+            return m.startPredictThreads(&features,threadNum);
+          })     
       .def(
           "get_labels",
           [](fasttext::FastText& m){

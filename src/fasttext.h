@@ -75,6 +75,7 @@ class FastText {
   //新增成员
   std::vector<std::vector<std::string>> features_;
   std::vector<std::string> labels_;
+  std::atomic<int64_t> predict_count;
   //
 
  public:
@@ -150,6 +151,8 @@ class FastText {
 //新增函数  
   void fit(const std::vector<std::vector<std::string>> features,const std::vector<std::string> labels,const Args& args,std::vector<std::pair<std::string,float>> sample_weight);
   void startFitThreads();
+  std::vector<char*>  startPredictThreads(const std::vector<std::vector<std::string>> *features, int32_t threadNum);
+  void predictThread(const std::vector<std::vector<std::string>> *features,std::vector<char*> *targets,int32_t threadNum,int32_t threadId);
   void trainFitThread(int32_t threadId);
   int predict(
     const std::vector<std::vector<std::string>> features,
@@ -160,7 +163,7 @@ class FastText {
   std::vector<Vector> predictProb(
       const std::vector<std::vector<std::string>> features,
       real threshold);
-  std::vector<std::string> getLabels();
+  std::vector<char*> getLabels();
   std::string predictLabel(
     const std::vector<std::string> feature,
     real threshold);
