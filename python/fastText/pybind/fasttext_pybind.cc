@@ -80,6 +80,8 @@ PYBIND11_MODULE(fasttext_pybind, m) {
       .def_readwrite("verbose", &fasttext::Args::verbose)
       .def_readwrite("pretrainedVectors", &fasttext::Args::pretrainedVectors)
       .def_readwrite("saveOutput", &fasttext::Args::saveOutput)
+      .def_readwrite("gama", &fasttext::Args::gama)
+      .def_readwrite("alpha", &fasttext::Args::alpha)
 
       .def_readwrite("qout", &fasttext::Args::qout)
       .def_readwrite("retrain", &fasttext::Args::retrain)
@@ -98,6 +100,7 @@ PYBIND11_MODULE(fasttext_pybind, m) {
       .value("ns", fasttext::loss_name::ns)
       .value("softmax", fasttext::loss_name::softmax)
       .value("ova", fasttext::loss_name::ova)
+      .value("focal", fasttext::loss_name::focal)
       .export_values();
 
   m.def(

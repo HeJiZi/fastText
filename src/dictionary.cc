@@ -325,7 +325,7 @@ void Dictionary::readFromArray(const std::vector<std::vector<std::string>> featu
       }
     }
     if(!isFind){
-      weightTable.push_back(1.0);
+      weightTable.push_back(args_->alpha);
       // std::cout<<"push1.0"<<std::endl;
     }
     // std::cout<<it->word<<":"<<weightTable[index++]<<std::endl;

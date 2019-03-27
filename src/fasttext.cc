@@ -42,6 +42,8 @@ std::shared_ptr<Loss> FastText::createLoss(std::shared_ptr<Matrix>& output) {
       return std::make_shared<SoftmaxLoss>(output);
     case loss_name::ova:
       return std::make_shared<OneVsAllLoss>(output);
+    case loss_name::focal:
+      return std::make_shared<FocalLoss>(output,args_->gama);
     default:
       throw std::runtime_error("Unknown loss");
   }
@@ -795,6 +797,7 @@ void FastText::fit(const std::vector<std::vector<std::string>> features,const st
   }
   output_ = createTrainOutputMatrix();
   auto loss = createLoss(output_);
+  // auto loss = std::make_shared<SoftmaxLoss>(output_,args_->gama);
   loss->setWeightTable(dict_->weightTable);
   bool normalizeGradient = (args_->model == model_name::sup);
   model_ = std::make_shared<Model>(input_, output_, loss, normalizeGradient);

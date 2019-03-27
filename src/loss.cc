@@ -307,6 +307,7 @@ void HierarchicalSoftmaxLoss::dfs(
 
 SoftmaxLoss::SoftmaxLoss(std::shared_ptr<Matrix>& wo) : Loss(wo) {}
 
+
 void SoftmaxLoss::computeOutput(Model::State& state) const {
   Vector& output = state.output;
   output.mul(*wo_, state.hidden);//将隐藏层乘上输出矩阵，得到output
@@ -339,14 +340,50 @@ real SoftmaxLoss::forward(
   if (backprop) {
     int32_t osz = wo_->size(0);
     for (int32_t i = 0; i < osz; i++) {
+      real pi = state.output[i];
       real label = (i == target) ? 1.0 : 0.0;
-      real alpha = lr * (label - state.output[i]) * weightTabel_[target];
+      real alpha = lr * (label - pi) ;
       // std::cout<<weightTabel_[i]<<std::endl;
       state.grad.addRow(*wo_, i, alpha);
       wo_->addVectorToRow(state.hidden, i, alpha);
     }
   }
   return -log(state.output[target]);
+};
+
+
+FocalLoss::FocalLoss(std::shared_ptr<Matrix>& wo,real gama):
+  SoftmaxLoss(wo),
+  gama_(gama){}
+
+real FocalLoss::forward(
+    const std::vector<int32_t>& targets,
+    int32_t targetIndex,
+    Model::State& state,
+    real lr,
+    bool backprop) {
+  computeOutput(state);
+
+  assert(targetIndex >= 0);
+  assert(targetIndex < targets.size());
+  int32_t target = targets[targetIndex];
+  real gama = gama_;
+
+  if (backprop) {
+    int32_t osz = wo_->size(0);
+    for (int32_t i = 0; i < osz; i++) {
+      real pi = state.output[i];
+      
+      real label = (i == target) ? 1.0 : 0.0;
+      
+      real focalLossGrad = -gama*std::pow(1-pi,gama-1)*log(pi)*pi+std::pow(1-pi,gama);
+      real alpha = lr * (label - pi) * weightTabel_[target]*focalLossGrad;
+      // std::cout<<weightTabel_[i]<<std::endl;
+      state.grad.addRow(*wo_, i, alpha);
+      wo_->addVectorToRow(state.hidden, i, alpha);
+    }
+  }
+  return -log(state.output[target])*std::pow(1-state.output[target],gama);
 };
 
 } // namespace fasttext

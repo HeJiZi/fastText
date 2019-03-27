@@ -308,6 +308,8 @@ def _parse_loss_string(string):
         return loss_name.softmax
     if string == "ova":
         return loss_name.ova
+    if string == "focal":
+        return loss_name.focal
     else:
         raise ValueError("Unrecognized loss name")
 
@@ -420,7 +422,9 @@ def train_unsupervised(
 def fit(
     x,
     y,
-    sampleWeight={},
+    alpha = 0.25,
+    gama = 2.0,
+    sampleWeight=[],
     lr=0.1,
     dim=100,
     ws=5,

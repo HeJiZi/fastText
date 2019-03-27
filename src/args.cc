@@ -16,6 +16,8 @@
 namespace fasttext {
 
 Args::Args() {
+  gama = 1.0;
+  alpha = 0.25;
   lr = 0.05;
   dim = 100;
   ws = 5;

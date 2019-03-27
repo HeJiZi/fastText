@@ -162,4 +162,17 @@ class SoftmaxLoss : public Loss {
   void computeOutput(Model::State& state) const override;
 };
 
+class FocalLoss : public SoftmaxLoss {
+ public:
+  explicit FocalLoss(std::shared_ptr<Matrix>& wo,real gama);
+  ~FocalLoss() noexcept override = default;
+  real forward(
+      const std::vector<int32_t>& targets,
+      int32_t targetIndex,
+      Model::State& state,
+      real lr,
+      bool backprop) override;
+ protected:
+  real gama_;
+};
 } // namespace fasttext
